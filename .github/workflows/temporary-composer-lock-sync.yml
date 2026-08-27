@@ -22,10 +22,12 @@ jobs:
           php-version: '8.1'
           extensions: curl, gd, json, pdo_mysql, zip, soap
           coverage: none
+      - name: Use main identity for local path packages
+        run: git branch -m main
       - name: Save original lock
         run: cp composer.lock /tmp/composer.lock.before
-      - name: Update lock metadata only
-        run: composer update --lock --no-install --no-scripts --no-interaction --no-progress
+      - name: Update root lock metadata only
+        run: composer update --lock --no-plugins --no-install --no-scripts --no-interaction --no-progress
       - name: Assert no dependency versions or source references changed
         shell: bash
         run: |
