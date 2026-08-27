@@ -1,0 +1,100 @@
+name: Temporary runtime validation
+
+on:
+  push:
+    branches:
+      - fix/autoservice-migration-index
+
+jobs:
+  runtime-validation:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: autorasa_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      APP_ENV: testing
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: autorasa_testing
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl, gd, json, pdo_mysql, zip, soap
+          coverage: none
+      - name: Prepare application
+        run: |
+          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+          cp .env.example .env
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: PHP lint changed migration
+        run: php -l platform/plugins/autoservice/database/migrations/2025_05_07_163861_autoservice_working_hour_timeslots_create_autoservice_table.php
+      - name: Laravel boot
+        run: php artisan about --only=environment
+      - name: Unit tests
+        run: php artisan test --testsuite=Unit
+      - name: Base migrations
+        run: php artisan migrate --force
+      - name: Activate required plugins
+        shell: bash
+        run: |
+          set -euo pipefail
+          for plugin in ecommerce payment autoservice kyc nextpay behpardakht zarinpal sms; do
+            echo "Activating $plugin"
+            php artisan cms:plugin:activate "$plugin"
+          done
+      - name: Verify changed plugin classes
+        shell: bash
+        run: |
+          cat > /tmp/check-plugins.php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+          $kernel->bootstrap();
+          $classes = [
+              'Botble\Autoservice\Http\Controllers\AutoserviceController',
+              'Botble\Autoservice\Http\Controllers\AutoserviceHourWorkController',
+              'Botble\Ecommerce\Http\Controllers\Fronts\ServiceCenterController',
+              'Botble\Kyc\Http\Middleware\ValidateKycSubmission',
+              'Botble\Nextpay\NextpayGateway',
+              'Botble\Nextpay\Http\Controllers\NextPayController',
+              'Botble\Nextpay\Models\Transaction',
+              'FriendsOfBotble\Sms\Http\Controllers\PhoneLoginController',
+              'FriendsOfBotble\Sms\Http\Controllers\PhoneVerificationController',
+              'Botble\Behpardakht\BehpardakhtGateway',
+              'Botble\Zarinpal\ZarinpalGateway',
+          ];
+          $missing = array_values(array_filter($classes, fn ($class) => ! class_exists($class)));
+          if ($missing) {
+              fwrite(STDERR, "Missing after activation:\n" . implode("\n", $missing) . "\n");
+              exit(1);
+          }
+          echo "Plugin class activation OK\n";
+          PHP
+          php /tmp/check-plugins.php
+      - name: Route registration smoke test
+        shell: bash
+        run: |
+          php artisan route:list > /tmp/routes.txt
+          grep -q 'public.kyc.list' /tmp/routes.txt
+          grep -q 'nextpay.payment.callback' /tmp/routes.txt
+          grep -q 'behpardakht.payment.callback' /tmp/routes.txt
