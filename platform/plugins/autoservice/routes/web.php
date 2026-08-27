@@ -1,12 +1,12 @@
 <?php
 
 use Botble\Autoservice\Http\Controllers\AutoserviceController;
+use Botble\Autoservice\Http\Controllers\AutoserviceHourWorkController;
 
 AdminHelper::registerRoutes(function () {
     Route::group(['prefix' => 'autoservices', 'as' => 'autoservice.'], function () {
         Route::resource('', AutoserviceController::class)->parameters(['' => 'autoservice']);
 
-        // AJAX routes for timeslots and working hours
         Route::post('ajax/timeslot/add', [AutoserviceController::class, 'addTimeslot'])->name('ajax.timeslot.add');
         Route::post('ajax/timeslot/edit', [AutoserviceController::class, 'editTimeslot'])->name('ajax.timeslot.edit');
         Route::delete('ajax/timeslot/delete', [AutoserviceController::class, 'deleteTimeslot'])->name('ajax.timeslot.delete');
@@ -16,9 +16,8 @@ AdminHelper::registerRoutes(function () {
         Route::delete('ajax/working-hour/delete', [AutoserviceController::class, 'deleteWorkingHour'])->name('ajax.working_hour.delete');
     });
 
-    Route::group(['prefix' => 'operators', 'as' => 'autoservicehourworks.'], function () {
-        Route::resource('autoservicehourworks', \Botble\Autoservice\Http\Controllers\AutoserviceHourWorkController::class)
-            ->parameters(['autoservicehourworks' => 'autoservicehourwork']);
+    Route::group(['prefix' => 'operators/autoservicehourworks', 'as' => 'autoservicehourworks.'], function () {
+        Route::resource('', AutoserviceHourWorkController::class)
+            ->parameters(['' => 'autoservicehourwork']);
     });
 });
-

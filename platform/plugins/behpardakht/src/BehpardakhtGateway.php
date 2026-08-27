@@ -2,32 +2,23 @@
 
 namespace Botble\Behpardakht;
 
+use Botble\Behpardakht\Models\Transaction;
 use Botble\Ecommerce\Enums\OrderStatusEnum;
 use Botble\Ecommerce\Models\Order;
-use Botble\Behpardakht\Models\Transaction;
-use Illuminate\Http\Request;
-use Shetabit\Multipay\Drivers\Behpardakht\Behpardakht;
-use Shetabit\Multipay\Exceptions\InvalidPaymentException;
-use Shetabit\Multipay\Exceptions\InvoiceNotFoundException;
-use Shetabit\Multipay\Exceptions\PurchaseFailedException;
-use Shetabit\Multipay\Exceptions\TimeoutException;
-use Shetabit\Payment\Facade\Payment;
-use Shetabit\Multipay\Invoice;
 use Exception;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Http\Request;
+use RuntimeException;
+use Shetabit\Multipay\Invoice;
+use Shetabit\Payment\Facade\Payment;
 
 class BehpardakhtGateway
 {
     public function createPayment($paymentData, $requestData)
     {
-        $amount = $requestData['amount'];
-        $metadata = [
-            'customer_id' => $requestData['customer_id'] ?? null,
-            'amount' => $requestData['amount'] ?? null,
-            'metadata' => $requestData['metadata'] ?? null,
-            'token' => $requestData['token'] ?? null,
-            'order_id' => $requestData['metadata'] ? json_decode($requestData['metadata'], true)['order_id'] : null,
-        ];
+        $amount = (int) $requestData['amount'];
+        $metadata = $this->normalizeMetadata($requestData['metadata'] ?? []);
+        $orderId = $metadata['order_id'] ?? $requestData['order_id'] ?? null;
+
         try {
             $invoice = (new Invoice())
                 ->amount($amount)
@@ -35,22 +26,18 @@ class BehpardakhtGateway
 
             $payment = Payment::via('behpardakht')
                 ->callbackUrl(route('behpardakht.payment.callback'))
-                ->purchase($invoice, function ($driver, $transactionId) use ($metadata) {
-
+                ->purchase($invoice, function ($driver, $transactionId) use ($metadata, $requestData, $orderId, $amount) {
                     Transaction::create([
-                        'customer_id' => $metadata['customer_id'],
+                        'customer_id' => $requestData['customer_id'] ?? ($metadata['customer_id'] ?? null),
                         'transaction_id' => $transactionId,
-                        'token' => $metadata['token'],
-                        'amount' => $metadata['amount'],
-                        'order_id' => $metadata['order_id'],
-                        'metadata' => $metadata['metadata'],
-                        'payment' => 'behpardakht',
+                        'token' => $requestData['token'] ?? null,
+                        'amount' => $amount,
+                        'order_id' => $orderId,
+                        'currency' => $requestData['currency'] ?? 'IRT',
+                        'metadata' => $metadata,
+                        'payment' => BEHPARDAKHT_PAYMENT_METHOD_NAME,
                     ]);
-
                 });
-
-            $paymentUrl = $payment->pay()->getAction();
-
 
             return [
                 'response' => [
@@ -58,52 +45,81 @@ class BehpardakhtGateway
                     'amount' => $invoice->getAmount(),
                     'transaction_id' => $invoice->getTransactionId(),
                 ],
-                'url' => $paymentUrl,
-
+                'url' => $payment->pay()->getAction(),
             ];
         } catch (Exception $e) {
-            throw new Exception('امکان اتصال برقرار نیست: ' . $e->getMessage() . ' | Code: ' . $e->getCode() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
+            throw new RuntimeException('Payment creation failed: ' . $e->getMessage(), (int) $e->getCode(), $e);
         }
     }
 
-
-    public function verifyPayment(Request $request)
+    public function verifyPayment(Request $request): array
     {
-        $authority = $request->Authority;
+        $transactionId = $request->input('RefId');
+        $transaction = null;
 
         try {
-            $transaction = Transaction::where('transaction_id', $authority)->firstOrFail();
+            if (! $transactionId) {
+                throw new RuntimeException('Missing Behpardakht RefId.');
+            }
 
-            $receipt = Payment::via('behpardakht')->amount($transaction->amount)->verify();
+            $transaction = Transaction::query()
+                ->where('payment', BEHPARDAKHT_PAYMENT_METHOD_NAME)
+                ->where('transaction_id', $transactionId)
+                ->firstOrFail();
 
-            Order::where('user_id', $transaction->customer_id)->where('id', $transaction->order_id)->first()->update(['status' => OrderStatusEnum::COMPLETED]);
+            $receipt = Payment::via('behpardakht')
+                ->amount($transaction->amount)
+                ->transactionId($transaction->transaction_id)
+                ->verify();
+
+            $orderQuery = Order::query()->whereKey($transaction->order_id);
+            if ($transaction->customer_id) {
+                $orderQuery->where('user_id', $transaction->customer_id);
+            }
+
+            $order = $orderQuery->first();
+            if (! $order) {
+                throw new RuntimeException('Order associated with the payment was not found.');
+            }
+
+            $order->update(['status' => OrderStatusEnum::COMPLETED]);
 
             $details = $receipt->getDetails();
+            $referenceId = (string) $receipt->getReferenceId();
+            $code = $details['code'] ?? 0;
 
             $transaction->update([
                 'status' => 'completed',
-                'reference_id' => $receipt->getReferenceId(),
+                'reference_id' => $referenceId,
                 'fee' => $details['fee'] ?? 0,
-                'card_pan' => $details['card_pan'] ?? null,
+                'card_pan' => $details['CardHolderPan'] ?? $details['card_pan'] ?? null,
                 'message' => $details['message'] ?? 'Payment verified',
-                'code' => $details['code'] ?? 101,
+                'code' => is_numeric($code) ? (int) $code : 0,
             ]);
 
-            return $response=[
-
-                'code' => $details['code'],
+            return [
+                'code' => 0,
                 'message' => 'Payment successfully verified.',
                 'data' => [
                     'amount' => $transaction->amount,
                     'transaction_id' => $transaction->transaction_id,
-                    'reference' => $receipt->getReferenceId(),
-                    'currency' => 'IRT',
-                    'metadata' => json_decode($transaction->metadata, true),
+                    'reference' => $referenceId,
+                    'currency' => $transaction->currency ?: 'IRT',
+                    'metadata' => $this->normalizeMetadata($transaction->metadata),
                     'fee' => $details['fee'] ?? 0,
-                    'card_pan' => $details['card_pan'] ?? null,
-                ]
+                    'card_pan' => $details['CardHolderPan'] ?? $details['card_pan'] ?? null,
+                ],
             ];
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
+            if ($transaction && $transaction->status !== 'completed') {
+                $transaction->update([
+                    'status' => 'failed',
+                    'message' => $e->getMessage(),
+                ]);
+            }
+
+            report($e);
+
             return [
                 'code' => 500,
                 'message' => 'Payment verification failed.',
@@ -112,5 +128,18 @@ class BehpardakhtGateway
         }
     }
 
+    private function normalizeMetadata(mixed $metadata): array
+    {
+        if (is_array($metadata)) {
+            return $metadata;
+        }
 
+        if (is_string($metadata) && $metadata !== '') {
+            $decoded = json_decode($metadata, true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
 }

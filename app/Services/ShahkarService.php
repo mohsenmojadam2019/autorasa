@@ -1,35 +1,41 @@
 <?php
+
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 class ShahkarService
 {
-
     public function inquire(string $nationalCode, string $mobile)
     {
-        $mobile='090343253269';
-        $nationalCode='1810037492';
-        $response = Http::withHeaders([
-            'Accept-Language' => 'fa',
-            'App-Key' => '14476',
-            'Device-Id' => '192.168.1.1',
-            'Token-Id' => 'vKJUIx32cpDmdnvtBcYvS2AtFcmGDnNrhTUalktByUPenkkdY4nn4d2Z4gUN7jGBCCW2nP3WRjzWRk3t7vZdqVHY',
-            'CLIENT-DEVICE-ID' => '127.0.0.1',
-            'CLIENT-IP-ADDRESS' => '127.0.0.1',
-            'CLIENT-USER-AGENT' => 'User Agent',
-            'CLIENT-USER-ID' => $mobile,
-            'CLIENT-PLATFORM-TYPE' => 'WEB',
-            'Content-Type' => 'application/json',
-        ])->post('https://api.portal.sandbox.faraboom.co/v1/identity/inquiry/birthDate', [
-            'national_code' => $nationalCode,
-            'birth_date' => '0001-01-01T00:00:00',
-            'Username' => config('services.shahkar.username'),
-            'password' => config('services.shahkar.password'),
-        ]);
+        try {
+            $response = Http::withHeaders([
+                'Accept-Language' => 'fa',
+                'App-Key' => '14476',
+                'Device-Id' => '192.168.1.1',
+                'Token-Id' => 'vKJUIx32cpDmdnvtBcYvS2AtFcmGDnNrhTUalktByUPenkkdY4nn4d2Z4gUN7jGBCCW2nP3WRjzWRk3t7vZdqVHY',
+                'CLIENT-DEVICE-ID' => '127.0.0.1',
+                'CLIENT-IP-ADDRESS' => '127.0.0.1',
+                'CLIENT-USER-AGENT' => 'User Agent',
+                'CLIENT-USER-ID' => $mobile,
+                'CLIENT-PLATFORM-TYPE' => 'WEB',
+                'Content-Type' => 'application/json',
+            ])->post('https://api.portal.sandbox.faraboom.co/v1/identity/inquiry/birthDate', [
+                'national_code' => $nationalCode,
+                'birth_date' => '0001-01-01T00:00:00',
+                'Username' => config('services.shahkar.username'),
+                'password' => config('services.shahkar.password'),
+            ]);
 
-        return $response->body();
+            return $response->body();
+        } catch (ConnectionException $e) {
+            report($e);
+
+            return null;
+        }
     }
+
     public function verifyMobileAndNationalCode(string $mobile, string $nationalCode): array
     {
         $data = [
@@ -51,23 +57,36 @@ class ShahkarService
             'CLIENT-PLATFORM-TYPE' => 'WEB',
         ];
 
-        $response = Http::withHeaders($headers)
-            ->withoutVerifying()
-            ->acceptJson()
-            ->post('https://api.sandbox.faraboom.co/v1/mobile/national-code', $data);
+        try {
+            $response = Http::withHeaders($headers)
+                ->withoutVerifying()
+                ->acceptJson()
+                ->post('https://api.sandbox.faraboom.co/v1/mobile/national-code', $data);
+        } catch (ConnectionException $e) {
+            report($e);
+
+            return [
+                'success' => false,
+                'status' => 503,
+                'error' => 'Unable to connect to Shahkar service.',
+            ];
+        }
 
         if ($response->successful()) {
+            $responseData = $response->json() ?: [];
+            $responseData['match'] = (bool) ($responseData['match'] ?? false);
+
             return [
                 'success' => true,
-                'data' => $response->json()
+                'status' => $response->status(),
+                'data' => $responseData,
             ];
         }
 
         return [
             'success' => false,
-            'error' => $response->body()
+            'status' => $response->status(),
+            'error' => $response->body(),
         ];
     }
-
-
 }

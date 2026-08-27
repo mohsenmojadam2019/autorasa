@@ -8,12 +8,8 @@ use Botble\Table\Actions\DeleteAction;
 use Botble\Table\Actions\EditAction;
 use Botble\Table\BulkActions\DeleteBulkAction;
 use Botble\Table\BulkChanges\CreatedAtBulkChange;
-use Botble\Table\BulkChanges\NameBulkChange;
-use Botble\Table\BulkChanges\StatusBulkChange;
 use Botble\Table\Columns\CreatedAtColumn;
 use Botble\Table\Columns\IdColumn;
-use Botble\Table\Columns\NameColumn;
-use Botble\Table\Columns\StatusColumn;
 use Botble\Table\Columns\TitleColumn;
 use Botble\Table\HeaderActions\CreateHeaderAction;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,14 +29,11 @@ class AutoserviceTable extends TableAbstract
                 IdColumn::make(),
                 TitleColumn::make()->route('autoservice.edit'),
                 CreatedAtColumn::make(),
-                StatusColumn::make(),
             ])
             ->addBulkActions([
                 DeleteBulkAction::make()->permission('autoservice.destroy'),
             ])
             ->addBulkChanges([
-                NameBulkChange::make(),
-                StatusBulkChange::make(),
                 CreatedAtBulkChange::make(),
             ])
             ->queryUsing(function (Builder $query) {

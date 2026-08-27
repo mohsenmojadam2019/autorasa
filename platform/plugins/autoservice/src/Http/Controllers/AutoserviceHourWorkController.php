@@ -2,11 +2,12 @@
 
 namespace Botble\Autoservice\Http\Controllers;
 
+use Botble\Autoservice\Forms\AutoserviceHourWorkForm;
+use Botble\Autoservice\Http\Requests\AutoserviceHourWorkRequest;
 use Botble\Autoservice\Models\AutoserviceWorkingHour;
+use Botble\Autoservice\Tables\AutoserviceHourWorkTable;
 use Botble\Base\Http\Actions\DeleteResourceAction;
 use Botble\Base\Http\Controllers\BaseController;
-use Botble\Autoservice\Forms\AutoserviceHourWorkForm;
-use Botble\Autoservice\Tables\AutoserviceHourWorkTable;
 
 class AutoserviceHourWorkController extends BaseController
 {
@@ -14,7 +15,7 @@ class AutoserviceHourWorkController extends BaseController
     {
         $this
             ->breadcrumb()
-            ->add(trans(trans('plugins/autoservice::autoservice.name')), route('autoservice.index'));
+            ->add(trans('plugins/autoservice::autoservice.name'), route('autoservice.index'));
     }
 
     public function index(AutoserviceHourWorkTable $table)
@@ -34,7 +35,6 @@ class AutoserviceHourWorkController extends BaseController
     public function store(AutoserviceHourWorkRequest $request)
     {
         $form = AutoserviceHourWorkForm::create()->setRequest($request);
-
         $form->save();
 
         return $this
@@ -44,16 +44,16 @@ class AutoserviceHourWorkController extends BaseController
             ->setMessage(trans('core/base::notices.create_success_message'));
     }
 
-    public function edit(AutoserviceWorkingHour $autoservice)
+    public function edit(AutoserviceWorkingHour $autoservicehourwork)
     {
-        $this->pageTitle(trans('core/base::forms.edit_item', ['name' => $autoservice->day]));
+        $this->pageTitle(trans('core/base::forms.edit_item', ['name' => $autoservicehourwork->day]));
 
-        return AutoserviceForm::createFromModel($autoservice)->renderForm();
+        return AutoserviceHourWorkForm::createFromModel($autoservicehourwork)->renderForm();
     }
 
-    public function update(AutoserviceWorkingHour $autoservice, AutoserviceHourWorkRequest $request)
+    public function update(AutoserviceWorkingHour $autoservicehourwork, AutoserviceHourWorkRequest $request)
     {
-        AutoserviceHourWorkForm::createFromModel($autoservice)
+        AutoserviceHourWorkForm::createFromModel($autoservicehourwork)
             ->setRequest($request)
             ->save();
 
@@ -63,8 +63,8 @@ class AutoserviceHourWorkController extends BaseController
             ->setMessage(trans('core/base::notices.update_success_message'));
     }
 
-    public function destroy(AutoserviceWorkingHour $autoservice)
+    public function destroy(AutoserviceWorkingHour $autoservicehourwork)
     {
-        return DeleteResourceAction::make($autoservice);
+        return DeleteResourceAction::make($autoservicehourwork);
     }
 }

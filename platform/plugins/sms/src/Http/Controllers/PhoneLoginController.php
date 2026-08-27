@@ -19,8 +19,9 @@ class PhoneLoginController extends BaseController
     {
         SeoHelper::setTitle(trans('plugins/sms::sms.phone_number_login'));
         $identifier = $request->phone;
-        $form = PhoneLoginForm::create(['phone'=>$identifier]);
+        $form = PhoneLoginForm::create(['phone' => $identifier]);
         $expiryTime = OtpFacade::getExpiryTime($identifier);
+
         return Theme::scope(
             'otpl.verify',
             compact('form', 'identifier', 'expiryTime'),
@@ -30,28 +31,38 @@ class PhoneLoginController extends BaseController
 
     public function store(Request $request)
     {
-        if (! OtpFacade::verify($request->phone, $request->input('otp'))) {
+        $validated = $request->validate([
+            'phone' => ['required', 'string', 'exists:ec_customers,phone'],
+            'otp' => ['required', 'digits:4'],
+        ]);
+
+        if (! OtpFacade::verify($validated['phone'], $validated['otp'])) {
             return $this
                 ->httpResponse()
                 ->setError()
                 ->setMessage(trans('plugins/sms::sms.your_OTP_is_invalid_or_expired'));
         }
-        $customer=Customer::where('phone',$request->phone)->first();
+
+        $customer = Customer::where('phone', $validated['phone'])->firstOrFail();
         Auth::guard('customer')->login($customer);
+
         return $this
             ->httpResponse()
             ->setNextUrl(session()->pull('url.intended', BaseHelper::getHomepageUrl()))
             ->setMessage(trans('plugins/sms::sms.Your_logedin_successfully'));
     }
 
-    public function resend(Request $request,SendOtpAction $sendOtpAction)
+    public function resend(Request $request, SendOtpAction $sendOtpAction)
     {
+        $validated = $request->validate([
+            'phone' => ['required', 'string', 'exists:ec_customers,phone'],
+        ]);
 
-        $sendOtpAction($request->phone);
+        $sendOtpAction($validated['phone']);
 
         return $this
             ->httpResponse()
-            ->setNextUrl(route('otpl.login',['phone'=>$request->phone]))
+            ->setNextUrl(route('otpl.login', ['phone' => $validated['phone']]))
             ->setMessage(trans('plugins/sms::otp.otp_sent'));
     }
 }

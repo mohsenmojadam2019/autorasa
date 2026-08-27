@@ -2,12 +2,12 @@
 
 namespace Botble\Autoservice\Forms;
 
+use Botble\Autoservice\Http\Requests\AutoserviceHourWorkRequest;
 use Botble\Autoservice\Models\Autoservice;
 use Botble\Autoservice\Models\AutoserviceWorkingHour;
 use Botble\Base\Forms\Fields\SelectField;
 use Botble\Base\Forms\Fields\TextField;
 use Botble\Base\Forms\FormAbstract;
-use Botble\Autoservice\Http\Requests\AutoserviceHourWorkRequest;
 
 class AutoserviceHourWorkForm extends FormAbstract
 {
@@ -25,14 +25,6 @@ class AutoserviceHourWorkForm extends FormAbstract
                 'label' => trans('plugins/autoservice::autoservice.day'),
                 'required' => true,
             ])
-            ->add('start_time', TextField::class, [
-                'label' => trans('plugins/autoservice::autoservice.start_time'),
-                'required' => true,
-            ])
-            ->add('end_time', TextField::class, [
-                'label' => trans('plugins/autoservice::autoservice.end_time'),
-                'required' => true,
-            ])
-            ->setBreakFieldPoint('end_time');
+            ->setBreakFieldPoint('day');
     }
 }
