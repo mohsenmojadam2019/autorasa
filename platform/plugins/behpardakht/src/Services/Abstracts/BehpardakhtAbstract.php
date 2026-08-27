@@ -2,31 +2,25 @@
 
 namespace Botble\Behpardakht\Services\Abstracts;
 
+use Botble\Behpardakht\Models\Transaction;
 use Botble\Payment\Services\Traits\PaymentErrorTrait;
-use Botble\Behpardakht\Services\Behpardakht;
 use Botble\Support\Services\ProduceServiceInterface;
 use Exception;
-use GuzzleHttp\ClientTrait;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 
 abstract class BehpardakhtAbstract implements ProduceServiceInterface
 {
     use PaymentErrorTrait;
+
     protected ?string $paymentCurrency = null;
-
     protected bool $supportRefundOnline;
-
     protected float $totalAmount;
 
     public function __construct()
     {
         $this->paymentCurrency = config('plugins.payment.payment.currency');
-
         $this->totalAmount = 0;
-
-        $this->supportRefundOnline = true;
+        $this->supportRefundOnline = false;
     }
 
     public function getSupportRefundOnline(): bool
@@ -48,82 +42,29 @@ abstract class BehpardakhtAbstract implements ProduceServiceInterface
 
     public function getPaymentDetails($payment)
     {
-        try {
-            $params = [
-//                'from' => $payment->created_at->subDays(1)->toISOString(),
-//                'to' => $payment->created_at->addDays(1)->toISOString(),
-                'from' => Carbon::parse($payment->attributes['created_at'])->subDays(1)->toISOString(),
-                'to' => Carbon::parse($payment->attributes['created_at'])->addDays(1)->toISOString(),
-
-
-            ];
-
-            $response = (new Behpardakht())->getListTransactions($params);
-            if ($response['status']) {
-                return collect($response['data'])->firstWhere('reference', $payment->charge_id);
-            }
-        } catch (Exception $exception) {
-            $this->setErrorMessageAndLogging($exception, 1);
-
-            return false;
-        }
-
-        return false;
+        return Transaction::query()
+            ->where('payment', BEHPARDAKHT_PAYMENT_METHOD_NAME)
+            ->where(function ($query) use ($payment) {
+                $query->where('reference_id', $payment->charge_id)
+                    ->orWhere('transaction_id', $payment->charge_id);
+            })
+            ->first()?->toArray() ?: false;
     }
 
-    public function refundOrder($paymentId, $amount)
+    public function refundOrder($paymentId, $amount): array
     {
-        try {
-            $response = (new Behpardakht())->refundOrder($paymentId, $amount);
-
-            if ($response['status']) {
-                $response = array_merge($response, ['_refund_id' => Arr::get($response, 'data.id')]);
-
-                return [
-                    'error' => false,
-                    'message' => $response['message'],
-                    'data' => $response,
-                ];
-            }
-
-            return [
-                'error' => true,
-                'message' => trans('plugins/payment::payment.status_is_not_completed'),
-            ];
-        } catch (Exception $exception) {
-            $this->setErrorMessageAndLogging($exception, 1);
-
-            return [
-                'error' => true,
-                'message' => $exception->getMessage(),
-            ];
-        }
+        return [
+            'error' => true,
+            'message' => 'Online refund is not supported by this Behpardakht integration.',
+        ];
     }
 
     public function getRefundDetails($refundId): array
     {
-        try {
-            $response = (new Behpardakht())->getRefundDetails($refundId);
-            if ($response['status']) {
-                return [
-                    'error' => false,
-                    'message' => $response['message'],
-                    'data' => $response,
-                ];
-            }
-
-            return [
-                'error' => true,
-                'message' => trans('plugins/payment::payment.status_is_not_completed'),
-            ];
-        } catch (Exception $exception) {
-            $this->setErrorMessageAndLogging($exception, 1);
-
-            return [
-                'error' => true,
-                'message' => $exception->getMessage(),
-            ];
-        }
+        return [
+            'error' => true,
+            'message' => 'Online refund is not supported by this Behpardakht integration.',
+        ];
     }
 
     public function execute(Request $request)
@@ -140,5 +81,4 @@ abstract class BehpardakhtAbstract implements ProduceServiceInterface
     abstract public function makePayment(Request $request);
 
     abstract public function afterMakePayment(Request $request);
-
 }

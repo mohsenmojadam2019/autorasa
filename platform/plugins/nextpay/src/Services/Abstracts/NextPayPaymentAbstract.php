@@ -2,30 +2,24 @@
 
 namespace Botble\Nextpay\Services\Abstracts;
 
+use Botble\Nextpay\Models\Transaction;
 use Botble\Payment\Services\Traits\PaymentErrorTrait;
-use Botble\Nextpay\Services\Nextpay;
-use Botble\Support\Services\ProduceServiceInterface;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 
 abstract class NextPayPaymentAbstract
 {
     use PaymentErrorTrait;
 
     protected ?string $paymentCurrency = null;
-
     protected bool $supportRefundOnline;
-
     protected float $totalAmount;
 
     public function __construct()
     {
         $this->paymentCurrency = config('plugins.payment.payment.currency');
-
         $this->totalAmount = 0;
-
-        $this->supportRefundOnline = true;
+        $this->supportRefundOnline = false;
     }
 
     public function getSupportRefundOnline(): bool
@@ -47,78 +41,28 @@ abstract class NextPayPaymentAbstract
 
     public function getPaymentDetails($payment)
     {
-        try {
-            $params = [
-                'from' => $payment->created_at->subDays(1)->toISOString(),
-                'to' => $payment->created_at->addDays(1)->toISOString(),
-            ];
-
-            $response = (new Nextpay())->getListTransactions($params);
-            if ($response['status']) {
-                return collect($response['data'])->firstWhere('reference', $payment->charge_id);
-            }
-        } catch (Exception $exception) {
-            $this->setErrorMessageAndLogging($exception, 1);
-
-            return false;
-        }
-
-        return false;
+        return Transaction::query()
+            ->where(function ($query) use ($payment) {
+                $query->where('reference_id', $payment->charge_id)
+                    ->orWhere('transaction_id', $payment->charge_id);
+            })
+            ->first()?->toArray() ?: false;
     }
 
-    public function refundOrder($paymentId, $amount)
+    public function refundOrder($paymentId, $amount): array
     {
-        try {
-            $response = (new Nextpay())->refundOrder($paymentId, $amount);
-
-            if ($response['status']) {
-                $response = array_merge($response, ['_refund_id' => Arr::get($response, 'data.id')]);
-
-                return [
-                    'error' => false,
-                    'message' => $response['message'],
-                    'data' => $response,
-                ];
-            }
-
-            return [
-                'error' => true,
-                'message' => trans('plugins/payment::payment.status_is_not_completed'),
-            ];
-        } catch (Exception $exception) {
-            $this->setErrorMessageAndLogging($exception, 1);
-
-            return [
-                'error' => true,
-                'message' => $exception->getMessage(),
-            ];
-        }
+        return [
+            'error' => true,
+            'message' => 'Online refund is not supported by this NextPay integration.',
+        ];
     }
 
     public function getRefundDetails($refundId): array
     {
-        try {
-            $response = (new Nextpay())->getRefundDetails($refundId);
-            if ($response['status']) {
-                return [
-                    'error' => false,
-                    'message' => $response['message'],
-                    'data' => $response,
-                ];
-            }
-
-            return [
-                'error' => true,
-                'message' => trans('plugins/payment::payment.status_is_not_completed'),
-            ];
-        } catch (Exception $exception) {
-            $this->setErrorMessageAndLogging($exception, 1);
-
-            return [
-                'error' => true,
-                'message' => $exception->getMessage(),
-            ];
-        }
+        return [
+            'error' => true,
+            'message' => 'Online refund is not supported by this NextPay integration.',
+        ];
     }
 
     public function execute(Request $request)

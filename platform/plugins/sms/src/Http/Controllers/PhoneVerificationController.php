@@ -8,7 +8,6 @@ use Botble\Ecommerce\Models\Customer;
 use Botble\SeoHelper\Facades\SeoHelper;
 use Botble\Theme\Facades\Theme;
 use Carbon\Carbon;
-use FriendsOfBotble\Sms\Facades\Guard;
 use FriendsOfBotble\Sms\Facades\Otp as OtpFacade;
 use FriendsOfBotble\Sms\Forms\PhoneVerificationForm;
 use FriendsOfBotble\Sms\Http\Requests\PhoneVerificationRequest;
@@ -22,7 +21,7 @@ class PhoneVerificationController extends BaseController
 
         $identifier = $request->phone;
         $expiryTime = OtpFacade::getExpiryTime($identifier);
-        $form = PhoneVerificationForm::create(['phone'=>$identifier]);
+        $form = PhoneVerificationForm::create(['phone' => $identifier]);
 
         return Theme::scope(
             'otp.verify',
@@ -33,9 +32,10 @@ class PhoneVerificationController extends BaseController
 
     public function store(PhoneVerificationRequest $request)
     {
-        $user = Customer::where('phone',$request->phone)->first();
+        $phone = $request->input('phone');
+        $user = Customer::where('phone', $phone)->firstOrFail();
 
-        if (! OtpFacade::verify($user->phone, $request->input('otp'))) {
+        if (! OtpFacade::verify($phone, $request->input('otp'))) {
             return $this
                 ->httpResponse()
                 ->setError()

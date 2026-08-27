@@ -3,16 +3,15 @@
 namespace Botble\Nextpay\Providers;
 
 use Botble\Base\Facades\Html;
+use Botble\Nextpay\Forms\NextpayPaymentMethodForm;
 use Botble\Nextpay\NextpayGateway;
+use Botble\Nextpay\Services\Gateways\NextpayPaymentService;
 use Botble\Payment\Enums\PaymentMethodEnum;
 use Botble\Payment\Facades\PaymentMethods;
-use Botble\Nextpay\Forms\NextpayPaymentMethodForm;
-use Botble\Nextpay\Services\Gateways\NextpayPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
-use Unicodeveloper\Paystack\Facades\Paystack;
 
 class HookServiceProvider extends ServiceProvider
 {
@@ -43,12 +42,7 @@ class HookServiceProvider extends ServiceProvider
 
         add_filter(BASE_FILTER_ENUM_HTML, function ($value, $class) {
             if ($class == PaymentMethodEnum::class && $value == NEXTPAY_PAYMENT_METHOD_NAME) {
-                $value = Html::tag(
-                    'span',
-                    PaymentMethodEnum::getLabel($value),
-                    ['class' => 'label-success status-label']
-                )
-                    ->toHtml();
+                $value = Html::tag('span', PaymentMethodEnum::getLabel($value), ['class' => 'label-success status-label'])->toHtml();
             }
 
             return $value;
@@ -61,43 +55,6 @@ class HookServiceProvider extends ServiceProvider
 
             return $data;
         }, 20, 2);
-
-        add_filter(PAYMENT_FILTER_PAYMENT_INFO_DETAIL, function ($data, $payment) {
-            if ($payment->payment_channel == NEXTPAY_PAYMENT_METHOD_NAME) {
-                $paymentService = (new NextpayPaymentService());
-                $paymentDetail = $paymentService->getPaymentDetails($payment);
-                if ($paymentDetail) {
-                    $data = view(
-                        'plugins/nextpay::detail',
-                        ['payment' => $paymentDetail, 'paymentModel' => $payment]
-                    )->render();
-                }
-            }
-
-            return $data;
-        }, 20, 2);
-
-        add_filter(PAYMENT_FILTER_GET_REFUND_DETAIL, function ($data, $payment, $refundId) {
-            if ($payment->payment_channel == NEXTPAY_PAYMENT_METHOD_NAME) {
-                $refundDetail = (new NextpayPaymentService())->getRefundDetails($refundId);
-                if (!Arr::get($refundDetail, 'error')) {
-                    $refunds = Arr::get($payment->metadata, 'refunds');
-                    $refund = collect($refunds)->firstWhere('data.id', $refundId);
-                    $refund = array_merge($refund, Arr::get($refundDetail, 'data', []));
-
-                    return array_merge($refundDetail, [
-                        'view' => view(
-                            'plugins/nextpay::refund-detail',
-                            ['refund' => $refund, 'paymentModel' => $payment]
-                        )->render(),
-                    ]);
-                }
-
-                return $refundDetail;
-            }
-
-            return $data;
-        }, 20, 3);
     }
 
     public function addPaymentSettings(?string $settings): string
@@ -121,52 +78,56 @@ class HookServiceProvider extends ServiceProvider
         }
 
         $supportedCurrencies = (new NextpayPaymentService())->supportedCurrencyCodes();
-
         $paymentData = apply_filters(PAYMENT_FILTER_PAYMENT_DATA, [], $request);
 
-        if (!in_array($paymentData['currency'], $supportedCurrencies)) {
+        if (! in_array($paymentData['currency'], $supportedCurrencies, true)) {
             $data['error'] = true;
-            $data['message'] = __(
-                ":name doesn't support :currency. List of currencies supported by :name: :currencies.",
-                [
-                    'name' => 'Nextpay',
-                    'currency' => $paymentData['currency'],
-                    'currencies' => implode(', ', $supportedCurrencies),
-                ]
-            );
+            $data['message'] = __(":name doesn't support :currency. List of currencies supported by :name: :currencies.", [
+                'name' => 'Nextpay',
+                'currency' => $paymentData['currency'],
+                'currencies' => implode(', ', $supportedCurrencies),
+            ]);
 
             return $data;
         }
+
         try {
+            $orderId = $request->input('order_id') ?: Arr::get($paymentData, 'order_id');
+            if (is_array($orderId)) {
+                $orderId = reset($orderId);
+            }
+
             $requestData = [
-                'reference' => Paystack::genTranxRef(),
-                'quantity' => 1,
+                'token' => $paymentData['checkout_token'] ?? null,
+                'customer_id' => $paymentData['customer_id'] ?? auth('customer')->id(),
                 'currency' => $paymentData['currency'],
-                'amount' => (int)$paymentData['amount'] * 100,
-                'email' => $paymentData['address']['email'],
+                'amount' => (int) $paymentData['amount'],
+                'order_id' => $orderId,
                 'callback_url' => route('nextpay.payment.callback'),
-                'metadata' => json_encode([
-                    'order_id' => $paymentData['order_id'],
-                    'customer_id' => $paymentData['customer_id'],
-                    'customer_type' => $paymentData['customer_type'],
-                ]),
+                'metadata' => [
+                    'order_id' => $orderId,
+                    'customer_id' => $paymentData['customer_id'] ?? auth('customer')->id(),
+                    'customer_type' => $paymentData['customer_type'] ?? null,
+                ],
             ];
+
             do_action('payment_before_making_api_request', NEXTPAY_PAYMENT_METHOD_NAME, $requestData);
 
-            $res = app(NextpayGateway::class)->createPayment($paymentData['amount'], $request->order_id);
+            $result = app(NextpayGateway::class)->createPayment($requestData);
 
-            do_action('payment_after_api_response', NEXTPAY_PAYMENT_METHOD_NAME, $requestData, (array)$res['response']);
+            do_action('payment_after_api_response', NEXTPAY_PAYMENT_METHOD_NAME, $requestData, (array) $result['response']);
 
-            if (isset($res['response']['code']) && $res['response']['code'] == 0) {
-                header('Location: ' . $res['url']);
+            if (($result['response']['code'] ?? -1) === 0 && ! empty($result['url'])) {
+                header('Location: ' . $result['url']);
                 exit;
             }
 
             $data['error'] = true;
             $data['message'] = __('Payment failed!');
         } catch (Throwable $exception) {
+            report($exception);
             $data['error'] = true;
-            $data['message'] = json_encode($exception->getMessage());
+            $data['message'] = __('Payment failed!');
         }
 
         return $data;
