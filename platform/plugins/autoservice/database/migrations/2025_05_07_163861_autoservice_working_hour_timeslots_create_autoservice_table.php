@@ -12,14 +12,13 @@ return new class extends Migration {
                 $table->id();
                 $table->foreignId('working_hour_id')->constrained('service_center_working_hours')->onDelete('cascade');
                 $table->foreignId('time_slot_id')->constrained('autoservice_time_slots')->onDelete('cascade');
+                $table->unique(['working_hour_id', 'time_slot_id']);
             });
         }
     }
 
     public function down(): void
     {
-        if (! Schema::hasTable('service_center_working_hour_time_slot')) {
-            Schema::dropIfExists('service_center_working_hour_time_slot');
-        }
+        Schema::dropIfExists('service_center_working_hour_time_slot');
     }
 };

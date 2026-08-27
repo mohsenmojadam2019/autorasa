@@ -10,7 +10,6 @@ use Botble\Table\BulkActions\DeleteBulkAction;
 use Botble\Table\Columns\CreatedAtColumn;
 use Botble\Table\Columns\IdColumn;
 use Botble\Table\Columns\NameColumn;
-use Botble\Table\Columns\TextColumn;
 use Botble\Table\HeaderActions\CreateHeaderAction;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -20,33 +19,26 @@ class AutoserviceHourWorkTable extends TableAbstract
     {
         $this
             ->model(AutoserviceWorkingHour::class)
-            ->addHeaderAction(CreateHeaderAction::make()->route('autoservicehourworks.autoservicehourworks.create'))
+            ->addHeaderAction(CreateHeaderAction::make()->route('autoservicehourworks.create'))
             ->addActions([
-                EditAction::make()->route('autoservicehourworks.autoservicehourworks.edit'),
-                DeleteAction::make()->route('autoservicehourworks.autoservicehourworks.destroy'),
+                EditAction::make()->route('autoservicehourworks.edit'),
+                DeleteAction::make()->route('autoservicehourworks.destroy'),
             ])
             ->addColumns([
                 IdColumn::make(),
                 NameColumn::make('day')->title('روز'),
-                NameColumn::make('start_time')->title('زمان شروع'),
-                NameColumn::make('end_time')->title('زمان پایان'),
-
-                // نمایش نام مرکز خدمات از رابطه
-                NameColumn::make('serviceCenter.name')
+                NameColumn::make('serviceCenter.title')
                     ->title('نام مرکز خدمات')
                     ->alignLeft(),
-
                 CreatedAtColumn::make(),
             ])
             ->addBulkActions([
-                DeleteBulkAction::make()->permission('autoservicehourworks.autoservicehourworks.destroy'),
+                DeleteBulkAction::make()->permission('autoservicehourworks.destroy'),
             ])
             ->queryUsing(function (Builder $query) {
                 $query->select([
                     'id',
                     'day',
-                    'start_time',
-                    'end_time',
                     'service_center_id',
                     'created_at',
                 ])->with('serviceCenter');
