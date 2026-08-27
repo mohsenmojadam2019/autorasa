@@ -39,7 +39,7 @@ class ServiceCenterController extends BaseController
     {
         // Autoservice checkout always continues through customer KYC, so it cannot be a guest flow.
         if (! auth('customer')->check()) {
-            session()->put('url.intended', $request->fullUrl());
+            session()->put('url.intended', url()->previous());
 
             return $this
                 ->httpResponse()

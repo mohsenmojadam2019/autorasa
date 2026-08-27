@@ -5,7 +5,6 @@ namespace Botble\Kyc\Models;
 use Botble\Base\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;
 
 class KYCField extends BaseModel
 {
@@ -47,13 +46,17 @@ class KYCField extends BaseModel
     public function submissions()
     {
         $relation = $this->hasOne(KYCSubmission::class, 'kyc_field_id');
+        $routeName = request()->route()?->getName();
 
-        $model = Auth::guard('customer')->user() ?: Auth::user();
+        // Scope only the public KYC flow; admin/reporting relations stay generic.
+        if (is_string($routeName) && str_starts_with($routeName, 'public.kyc.')) {
+            $customer = auth('customer')->user();
 
-        if ($model) {
-            return $relation
-                ->where('modelable_id', $model->getKey())
-                ->where('modelable_type', $model::class);
+            if ($customer) {
+                return $relation
+                    ->where('modelable_id', $customer->getKey())
+                    ->where('modelable_type', $customer::class);
+            }
         }
 
         return $relation;
