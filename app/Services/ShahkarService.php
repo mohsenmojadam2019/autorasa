@@ -73,10 +73,13 @@ class ShahkarService
         }
 
         if ($response->successful()) {
+            $responseData = $response->json() ?: [];
+            $responseData['match'] = (bool) ($responseData['match'] ?? false);
+
             return [
                 'success' => true,
                 'status' => $response->status(),
-                'data' => $response->json(),
+                'data' => $responseData,
             ];
         }
 
