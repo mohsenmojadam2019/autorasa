@@ -2,6 +2,7 @@
 
 namespace Botble\Autoservice\Http\Requests;
 
+use Botble\Autoservice\Models\AutoserviceWorkingHour;
 use Botble\Support\Http\Requests\Request;
 use Illuminate\Validation\Rule;
 
@@ -12,6 +13,9 @@ class AutoserviceHourWorkRequest extends Request
     public function rules(): array
     {
         $workingHour = $this->route('autoservicehourwork');
+        $workingHourId = $workingHour instanceof AutoserviceWorkingHour
+            ? $workingHour->getKey()
+            : (is_numeric($workingHour) ? (int) $workingHour : null);
 
         return [
             'service_center_id' => ['required', 'integer', 'exists:service_centers,id'],
@@ -22,7 +26,7 @@ class AutoserviceHourWorkRequest extends Request
                 Rule::in(self::WEEKDAYS),
                 Rule::unique('service_center_working_hours', 'day')
                     ->where(fn ($query) => $query->where('service_center_id', $this->input('service_center_id')))
-                    ->ignore($workingHour?->getKey()),
+                    ->ignore($workingHourId),
             ],
         ];
     }

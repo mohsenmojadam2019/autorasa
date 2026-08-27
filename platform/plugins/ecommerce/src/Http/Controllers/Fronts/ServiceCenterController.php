@@ -5,7 +5,6 @@ namespace Botble\Ecommerce\Http\Controllers\Fronts;
 use App\Models\Province;
 use Botble\Autoservice\Models\Autoservice;
 use Botble\Ecommerce\Cart\Cart;
-use Botble\Ecommerce\Facades\EcommerceHelper;
 use Botble\Ecommerce\Http\Controllers\BaseController;
 use Botble\Ecommerce\Models\Booking;
 use Botble\Theme\Facades\Theme;
@@ -38,7 +37,10 @@ class ServiceCenterController extends BaseController
 
     public function submitForm(Request $request, Cart $cart)
     {
-        if (! EcommerceHelper::isEnabledGuestCheckout() && ! auth('customer')->check()) {
+        // Autoservice checkout always continues through customer KYC, so it cannot be a guest flow.
+        if (! auth('customer')->check()) {
+            session()->put('url.intended', $request->fullUrl());
+
             return $this
                 ->httpResponse()
                 ->setNextUrl(route('customer.login'));

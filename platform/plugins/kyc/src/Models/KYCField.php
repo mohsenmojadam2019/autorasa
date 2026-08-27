@@ -48,14 +48,12 @@ class KYCField extends BaseModel
     {
         $relation = $this->hasOne(KYCSubmission::class, 'kyc_field_id');
 
-        $customer = Auth::guard('customer')->user();
-        if ($customer) {
-            return $relation->where('modelable_type', $customer::class);
-        }
+        $model = Auth::guard('customer')->user() ?: Auth::user();
 
-        $user = Auth::user();
-        if ($user) {
-            return $relation->where('modelable_type', $user::class);
+        if ($model) {
+            return $relation
+                ->where('modelable_id', $model->getKey())
+                ->where('modelable_type', $model::class);
         }
 
         return $relation;

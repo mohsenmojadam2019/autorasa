@@ -117,7 +117,7 @@ class HookServiceProvider extends ServiceProvider
 
             do_action('payment_after_api_response', NEXTPAY_PAYMENT_METHOD_NAME, $requestData, (array) $result['response']);
 
-            if (($result['response']['code'] ?? -1) === 0 && ! empty($result['url'])) {
+            if ((int) ($result['response']['code'] ?? -1) === 0 && ! empty($result['url'])) {
                 header('Location: ' . $result['url']);
                 exit;
             }
