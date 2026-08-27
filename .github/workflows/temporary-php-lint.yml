@@ -1,11 +1,11 @@
 name: Temporary PHP lint
 
 on:
+  push:
+    branches:
+      - fix/confirmed-audit-bugs
   pull_request:
     branches: [main]
-    paths:
-      - '**/*.php'
-      - '.github/workflows/temporary-php-lint.yml'
 
 jobs:
   php-lint:
@@ -22,9 +22,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}" \
-            | grep -E '\.php$' \
-            | while IFS= read -r file; do
-                [ -f "$file" ] || continue
-                php -l "$file"
-              done
+          git fetch origin main --depth=1
+          files=$(git diff --name-only origin/main...HEAD | grep -E '\.php$' || true)
+          if [ -z "$files" ]; then
+            echo "No changed PHP files"
+            exit 0
+          fi
+          while IFS= read -r file; do
+            [ -f "$file" ] || continue
+            php -l "$file"
+          done <<< "$files"
