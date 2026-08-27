@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9e58b1855d35a82af0fa94e92af4b8ab",
+    "content-hash": "4215b7a8eddee7317cc24d68db688d31",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -2670,12 +2670,12 @@
             "version": "v6.10.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/firebase/php-jwt.git",
+                "url": "https://github.com/googleapis/php-jwt.git",
                 "reference": "30c19ed0f3264cb660ea496895cfb6ef7ee3653b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/30c19ed0f3264cb660ea496895cfb6ef7ee3653b",
+                "url": "https://api.github.com/repos/googleapis/php-jwt/zipball/30c19ed0f3264cb660ea496895cfb6ef7ee3653b",
                 "reference": "30c19ed0f3264cb660ea496895cfb6ef7ee3653b",
                 "shasum": ""
             },
@@ -13282,12 +13282,12 @@
             "version": "v3.14.10",
             "source": {
                 "type": "git",
-                "url": "https://github.com/barryvdh/laravel-debugbar.git",
+                "url": "https://github.com/fruitcake/laravel-debugbar.git",
                 "reference": "56b9bd235e3fe62e250124804009ce5bab97cc63"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/barryvdh/laravel-debugbar/zipball/56b9bd235e3fe62e250124804009ce5bab97cc63",
+                "url": "https://api.github.com/repos/fruitcake/laravel-debugbar/zipball/56b9bd235e3fe62e250124804009ce5bab97cc63",
                 "reference": "56b9bd235e3fe62e250124804009ce5bab97cc63",
                 "shasum": ""
             },
@@ -16054,9 +16054,8 @@
         "ext-gd": "*",
         "ext-json": "*",
         "ext-pdo": "*",
-        "ext-soap": "*",
         "ext-zip": "*"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
