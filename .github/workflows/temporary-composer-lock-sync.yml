@@ -1,0 +1,85 @@
+name: Temporary Composer lock sync
+
+on:
+  push:
+    branches:
+      - chore/sync-composer-lock
+    paths:
+      - .github/workflows/temporary-composer-lock-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl, gd, json, pdo_mysql, zip, soap
+          coverage: none
+      - name: Save original lock
+        run: cp composer.lock /tmp/composer.lock.before
+      - name: Update lock metadata only
+        run: composer update --lock --no-install --no-scripts --no-interaction --no-progress
+      - name: Assert no dependency versions or source references changed
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+
+          before = json.loads(Path('/tmp/composer.lock.before').read_text())
+          after = json.loads(Path('composer.lock').read_text())
+
+          def package_map(lock):
+              result = {}
+              for section in ('packages', 'packages-dev'):
+                  for pkg in lock.get(section, []):
+                      result[pkg['name']] = {
+                          'section': section,
+                          'version': pkg.get('version'),
+                          'source_reference': (pkg.get('source') or {}).get('reference'),
+                          'dist_reference': (pkg.get('dist') or {}).get('reference'),
+                      }
+              return result
+
+          b = package_map(before)
+          a = package_map(after)
+          if b.keys() != a.keys():
+              print('Package set changed', file=sys.stderr)
+              print('Added:', sorted(a.keys() - b.keys()), file=sys.stderr)
+              print('Removed:', sorted(b.keys() - a.keys()), file=sys.stderr)
+              sys.exit(1)
+
+          changed = [(name, b[name], a[name]) for name in b if b[name] != a[name]]
+          if changed:
+              print('Dependency versions/references changed unexpectedly:', file=sys.stderr)
+              for item in changed:
+                  print(item, file=sys.stderr)
+              sys.exit(1)
+
+          print('Dependency versions/references unchanged')
+          print('Old content-hash:', before.get('content-hash'))
+          print('New content-hash:', after.get('content-hash'))
+          PY
+      - name: Validate synced lock
+        run: composer validate --no-check-publish --no-interaction
+      - name: Show lock diff summary
+        run: git diff --stat -- composer.lock && git diff --numstat -- composer.lock
+      - name: Commit synced lock
+        shell: bash
+        run: |
+          if git diff --quiet -- composer.lock; then
+            echo 'composer.lock already synchronized'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add composer.lock
+          git commit -m 'chore: sync composer lock metadata'
+          git push origin HEAD:chore/sync-composer-lock
