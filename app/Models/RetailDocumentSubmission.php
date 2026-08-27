@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Botble\Ecommerce\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,14 +21,11 @@ class RetailDocumentSubmission extends Model
     ];
 
     protected $casts = [
-        'raw_response' => 'array', // برای تبدیل داده‌های JSON به آرایه
+        'raw_response' => 'array',
     ];
 
-    /**
-     * Get the user associated with the RetailDocumentSubmission.
-     */
     public function customer()
     {
-        return $this->belongsTo(User::class, 'customer_id');
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 }

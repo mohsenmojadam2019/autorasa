@@ -1,13 +1,12 @@
 <?php
 
 namespace Botble\Ecommerce\Models;
-use App\Models\ServiceCenter;
+
+use Botble\Autoservice\Models\Autoservice;
+use Botble\Base\Models\BaseModel;
 use Morilog\Jalali\Jalalian;
 
-use Botble\Base\Models\BaseModel;
-use Illuminate\Database\Eloquent\Model;
-
-class Booking extends baseModel
+class Booking extends BaseModel
 {
     protected $table = 'bookings';
 
@@ -22,37 +21,38 @@ class Booking extends baseModel
         'total',
         'options',
     ];
+
+    protected $casts = [
+        'options' => 'array',
+        'price' => 'decimal:2',
+        'total' => 'decimal:2',
+    ];
+
     public function getBookingTimeFormattedAttribute()
     {
-        if (!$this->booking_time) {
+        if (! $this->booking_time) {
             return null;
         }
 
         try {
             return \Carbon\Carbon::createFromFormat('H:i:s', $this->booking_time)->format('H:i');
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return $this->booking_time;
         }
     }
 
     public function getBookingDateJalaliAttribute()
     {
-        if (!$this->booking_date) {
+        if (! $this->booking_date) {
             return null;
         }
 
         try {
             return Jalalian::fromDateTime($this->booking_date)->format('Y/m/d');
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             return $this->booking_date;
         }
     }
-    protected $casts = [
-
-        'options' => 'array',
-        'price' => 'decimal:2',
-        'total' => 'decimal:2',
-    ];
 
     public function customer()
     {
@@ -66,6 +66,6 @@ class Booking extends baseModel
 
     public function serviceCenter()
     {
-        return $this->belongsTo(ServiceCenter::class);
+        return $this->belongsTo(Autoservice::class, 'service_center_id');
     }
 }
