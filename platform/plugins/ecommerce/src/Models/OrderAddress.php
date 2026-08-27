@@ -1,0 +1,84 @@
+<?php
+
+namespace Botble\Ecommerce\Models;
+
+use Botble\Base\Models\BaseModel;
+use Botble\Base\Supports\Avatar;
+use Botble\Ecommerce\Enums\OrderAddressTypeEnum;
+use Botble\Ecommerce\Traits\LocationTrait;
+use Botble\Media\Facades\RvMedia;
+use Exception;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Morilog\Jalali\Jalalian;
+
+class OrderAddress extends BaseModel
+{
+    use LocationTrait;
+
+    protected $table = 'ec_order_addresses';
+
+    protected $fillable = [
+        'name',
+        'email',
+        'phone',
+        'country',
+        'state',
+        'city',
+        'address',
+        'zip_code',
+        'order_id',
+        'type',
+        'time',
+        'date',
+    ];
+
+    public $timestamps = false;
+
+    protected $casts = [
+        'type' => OrderAddressTypeEnum::class,
+    ];
+
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::get(function () {
+            try {
+                return (new Avatar())->create($this->name)->toBase64();
+            } catch (Exception) {
+                return RvMedia::getDefaultImage();
+            }
+        });
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class)->withDefault();
+    }
+
+    public function getDateAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        try {
+            return Jalalian::fromDateTime($value)->format('Y/m/d');
+        } catch (\Exception $e) {
+            return $value;
+        }
+    }
+
+    public function getTimeAttribute($value)
+    {
+        if (!$value) {
+            return null;
+        }
+
+        try {
+            // اگر نیاز به تبدیل خاصی نیست فقط نمایش بده
+            return substr($value, 0, 5); // فقط ساعت و دقیقه
+        } catch (\Exception $e) {
+            return $value;
+        }
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "id": "botble/campaign",
+    "name": "Campaign",
+    "namespace": "Botble\\Campaign\\",
+    "provider": "Botble\\Campaign\\Providers\\CampaignServiceProvider",
+    "author": "Mostafa Rahmati",
+    "url": "",
+    "version": "1.0.0",
+    "description": "",
+    "minimum_core_version": "7.4.5"
+}

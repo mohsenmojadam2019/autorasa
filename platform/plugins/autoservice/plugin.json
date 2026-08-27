@@ -1,0 +1,11 @@
+{
+    "id": "botble/autoservice",
+    "name": "Autoservice",
+    "namespace": "Botble\\Autoservice\\",
+    "provider": "Botble\\Autoservice\\Providers\\AutoserviceServiceProvider",
+    "author": "Mostafa Rahmati",
+    "url": "",
+    "version": "1.0.0",
+    "description": "",
+    "minimum_core_version": "7.4.5"
+}

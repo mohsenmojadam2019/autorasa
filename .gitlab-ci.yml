@@ -1,0 +1,64 @@
+stages:
+  - test
+  - build
+  - deploy
+
+before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+
+
+####### STAGING ###########
+build-job-staging:
+  stage: build
+  tags:
+    - builder-01
+
+  script:
+    - echo "Building Docker images..."
+    - cp ${env_staging} ./.env
+    - docker build -f ./Dockerfile --tag ${CI_REGISTRY_IMAGE}:stable --tag ${CI_REGISTRY_IMAGE}:$CI_PIPELINE_ID .
+    - docker push ${CI_REGISTRY_IMAGE}:stable
+    - docker push ${CI_REGISTRY_IMAGE}:$CI_PIPELINE_ID
+  only:
+    - stage
+
+deploy-staging:
+  stage: deploy
+  script:
+    - cd /opt/deploy/autorasa-laravel
+    - git pull origin ${CI_COMMIT_BRANCH}
+    - cp ${env_staging} ./.env
+    - TAG=$CI_PIPELINE_ID docker compose -f docker-compose.production.yml up -d
+  only:
+    - stage  # Trigger this job only when changes are pushed to the staging branch
+  tags:
+    - staging  # Ensure the runner has Docker installed
+
+####### PRODUCTIOn ########
+build-job-production:
+  stage: build
+  tags:
+    - builder-01
+
+  script:
+    - echo "Building Docker images..."
+    - cp ${env_production} ./.env
+    - docker build -f ./Dockerfile --tag ${CI_REGISTRY_IMAGE}:stable --tag ${CI_REGISTRY_IMAGE}:$CI_PIPELINE_ID .
+    - docker push ${CI_REGISTRY_IMAGE}:stable
+    - docker push ${CI_REGISTRY_IMAGE}:$CI_PIPELINE_ID
+  only:
+    - main
+
+deploy-production:
+  stage: deploy
+  script:
+    - cd /opt/deploy/autorasa-laravel
+    - git pull origin ${CI_COMMIT_BRANCH}
+    - cp ${env_production} ./.env
+    - TAG=$CI_PIPELINE_ID docker compose -f docker-compose.production.yml up -d
+  only:
+    - main  # Trigger this job only when changes are pushed to the main branch
+  tags:
+    - production  # Ensure the runner has Docker installed
+  when: manual

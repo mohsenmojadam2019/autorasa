@@ -1,0 +1,1 @@
+[2025-06-02 11:43:54] localhost.ERROR: file_put_contents(/var/www/storage/cache_keys.json): Failed to open stream: Permission denied - /var/www/vendor/laravel/framework/src/Illuminate/Filesystem/Filesystem.php:204  

@@ -1,0 +1,14 @@
+{
+    "id": "botble/nextpay",
+    "name": "Nextpay",
+    "namespace": "Botble\\Nextpay\\",
+    "provider": "Botble\\Nextpay\\Providers\\NextpayServiceProvider",
+    "author": "Mostafa",
+    "url": "",
+    "version": "1.0.0",
+    "description": "",
+    "minimum_core_version": "7.4.5",
+    "require": [
+        "botble/payment"
+    ]
+}

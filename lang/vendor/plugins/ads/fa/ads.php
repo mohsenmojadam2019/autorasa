@@ -1,0 +1,33 @@
+<?php
+
+return [
+    'name' => 'تبلیغات',
+    'create' => 'تبلیغات جدید',
+    'edit' => 'ویرایش تبلیغات',
+    'location' => 'موقعیت',
+    'location_helper' => 'موقعیت برای نمایش تبلیغات در سایت استفاده می‌شود، که در تم ثبت شده است. شما می‌توانید از این موقعیت برای نمایش تبلیغات در سایت استفاده کنید.',
+    'url' => 'URL',
+    'expired_at' => 'تاریخ انقضا',
+    'expired_at_helper' => 'تبلیغات بعد از این تاریخ به طور خودکار غیرفعال خواهند شد. اگر نوع تبلیغات Google Adsense باشد، هرگز منقضی نخواهد شد.',
+    'key' => 'کلید',
+    'shortcode' => 'کد کوتاه',
+    'clicked' => 'کلیک شده',
+    'not_set' => 'تنظیم نشده',
+    'adblock_warning' => 'اگر از افزونه مرورگر Adblock استفاده می‌کنید، ابتدا باید این افزونه را در سایت خود غیرفعال کنید. ممکن است تبلیغات شما را مسدود کند اگر در سایت شما فعال باشد! <br /> نکته: نام تصویر نباید شامل کلمات کلیدی تبلیغاتی مانند (ad، promotion...) باشد.',
+    'select_ad' => 'انتخاب تبلیغ',
+    'open_in_new_tab' => 'آیا در تب جدید باز شود؟',
+    'ads_type' => 'نوع تبلیغات',
+    'custom_ad' => 'تبلیغ سفارشی',
+    'google_adsense_slot_id' => 'شناسه واحد Google AdSense',
+    'settings' => [
+        'title' => 'تنظیمات تبلیغات',
+        'description' => 'مدیریت تنظیمات تبلیغات',
+        'google_adsense_auto_ads_snippet' => 'کد خودکار تبلیغات Google AdSense',
+        'google_adsense_auto_ads_snippet_helper' => 'شما می‌توانید این کد را از :link دریافت کنید، به Ads → Get code → کپی کردن کد و اینجا قرار دهید.',
+        'google_adsense_unit_ads_client_id' => 'شناسه واحد تبلیغات Google AdSense',
+        'google_adsense_unit_ads_client_id_helper' => 'شما می‌توانید این کد را از :link دریافت کنید، به Ads → Unit Ads → Get code → کپی کردن شناسه مشتری و اینجا قرار دهید.',
+        'google_adsense_unit_ads_where_to_get_client_id' => 'شناسه مشتری Google AdSense را از کجا دریافت کنیم؟',
+        'google_adsense_unit_ads_guide_to_get_client_id' => 'وقتی کد کد واحد تبلیغات را دریافت کردید، می‌توانید این ویژگی <code>data-ad-client="ca-pub-123456789"</code> را مشاهده کنید، <code>ca-pub-123456789</code> شناسه مشتری واحد تبلیغات است.',
+        'google_adsense_unit_ads_guide_example_snippet' => 'نمونه کد واحد تبلیغات Google AdSense:',
+    ],
+];

@@ -1,0 +1,34 @@
+:root {
+    --primary-color: #314088;
+    --primary-color-rgb: 49, 64, 136;
+
+    --secondary-color: #E5E7EB;
+    --secondary-color-rgb: 229, 231, 235;
+
+    --heading-color: #111827;
+    --text-color: #212529;
+    --text-color-rgb: 33, 37, 41;
+
+    --link-color: #0056b3;
+    --link-color-rgb: 0, 86, 179;
+
+    --link-hover-color: #003d82;
+    --link-hover-color-rgb: 0, 61, 130;
+
+    --bb-font-sans-serif: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+
+    --bb-primary: var(--primary-color);
+    --bb-primary-rgb: var(--primary-color-rgb);
+
+    --bb-secondary: var(--secondary-color);
+    --bb-secondary-rgb: var(--secondary-color-rgb);
+
+    --bb-heading-color: var(--heading-color);
+    --bb-body-color: var(--text-color);
+    --bb-body-color-rgb: var(--text-color-rgb);
+
+    --bb-link-color: var(--link-color);
+    --bb-link-color-rgb: var(--link-color-rgb);
+    --bb-link-hover-color: var(--link-hover-color);
+    --bb-link-hover-color-rgb: var(--link-hover-color-rgb);
+}

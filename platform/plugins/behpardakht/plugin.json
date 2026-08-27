@@ -1,0 +1,14 @@
+{
+    "id": "botble/behpardakht",
+    "name": "Behpardakht",
+    "namespace": "Botble\\Behpardakht\\",
+    "provider": "Botble\\Behpardakht\\Providers\\BehpardakhtServiceProvider",
+    "author": "Mohsen Mojadam",
+    "url": "",
+    "version": "1.0.0",
+    "description": "",
+    "minimum_core_version": "7.4.5",
+    "require": [
+        "botble/payment"
+    ]
+}

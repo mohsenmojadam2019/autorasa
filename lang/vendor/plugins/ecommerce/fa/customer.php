@@ -1,0 +1,42 @@
+<?php
+
+return [
+    'send_sms'=>'ارسال پیامک',
+    'login_by_otp' => 'ورود با رمز یکبار مصرف؟',
+    'login' => 'ورود',
+    'phone'=>'شماره تلفن',
+    'phone_required' => 'شماره تلفن الزامی است.',
+    'phone_not_found' => 'شماره تلفن در سوابق ما یافت نشد.',
+    'phone_not_exist' => 'شماره تلفن اشتباه است.',
+    'name' => 'مشتریان',
+    'create' => 'ایجاد یک مشتری',
+    'edit' => 'ویرایش مشتری ":name"',
+    'email' => 'ایمیل',
+    'email_placeholder' => 'مثال: example@gmail.com',
+    'password' => 'گذرواژه',
+    'change_password' => 'گذرواژه را تغییر دهید؟',
+    'password_confirmation' => 'تأیید گذرواژه',
+    'intro' => [
+        'title' => 'مدیریت مشتریان',
+        'description' => 'زمانی که یک مشتری محصولات شما را خریداری کند، شما تاریخچه سفارش‌های او را خواهید دانست.',
+        'button_text' => 'ایجاد مشتری',
+    ],
+    'phone' => 'تلفن',
+    'phone_placeholder' => 'تلفن',
+    'avatar' => 'آواتار',
+    'dob' => 'تاریخ تولد',
+    'statuses' => [
+        'activated' => 'فعال شده',
+        'locked' => 'قفل شده',
+    ],
+    'email_verified' => 'ایمیل تأیید شده؟',
+    'verify_email' => [
+        'confirm_heading' => 'تأیید ایمیل',
+        'confirm_description' => 'آیا مطمئن هستید که می‌خواهید ایمیل این مشتری را تأیید کنید؟',
+        'notification' => 'این مشتری هنوز ایمیل خود را تأیید نکرده است؟ :approve_link برای تأیید ایمیل.',
+        'approve_here' => 'اینجا کلیک کنید',
+        'confirm_button' => 'تأیید',
+    ],
+    'private_notes' => 'یادداشت‌های خصوصی',
+    'private_notes_helper' => 'یادداشت‌های خصوصی فقط برای مدیران قابل مشاهده است.',
+];

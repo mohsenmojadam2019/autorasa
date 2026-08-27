@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+    <?xml-stylesheet href="http://localhost:8210/vendor/core/packages/sitemap/styles/sitemapindex.xsl" type="text/xsl"?>
+
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <sitemap>
+            <loc>http://localhost:8210/pages.xml</loc>
+                            <lastmod>2023-06-01T00:00:00+00:00</lastmod>
+                    </sitemap>
+            <sitemap>
+            <loc>http://localhost:8210/blog-categories.xml</loc>
+                            <lastmod>2025-03-08T02:26:38+00:00</lastmod>
+                    </sitemap>
+            <sitemap>
+            <loc>http://localhost:8210/blog-tags.xml</loc>
+                            <lastmod>2024-10-31T20:46:32+00:00</lastmod>
+                    </sitemap>
+            <sitemap>
+            <loc>http://localhost:8210/product-categories.xml</loc>
+                            <lastmod>2025-03-07T09:40:53+00:00</lastmod>
+                    </sitemap>
+            <sitemap>
+            <loc>http://localhost:8210/product-brands.xml</loc>
+                            <lastmod>2025-01-20T06:21:10+00:00</lastmod>
+                    </sitemap>
+            <sitemap>
+            <loc>http://localhost:8210/galleries.xml</loc>
+                            <lastmod>2024-10-31T20:46:40+00:00</lastmod>
+                    </sitemap>
+            <sitemap>
+            <loc>http://localhost:8210/sitemap_index.xml</loc>
+                            <lastmod>2025-03-15T13:24:07+00:00</lastmod>
+                    </sitemap>
+    </sitemapindex>

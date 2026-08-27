@@ -1,0 +1,123 @@
+<?php
+
+namespace Botble\Ecommerce\Forms\Fronts\Auth;
+
+use Botble\Base\Facades\Html;
+use Botble\Base\Forms\FieldOptions\CheckboxFieldOption;
+use Botble\Base\Forms\FieldOptions\HtmlFieldOption;
+use Botble\Base\Forms\Fields\EmailField;
+use Botble\Base\Forms\Fields\HtmlField;
+use Botble\Base\Forms\Fields\OnOffCheckboxField;
+use Botble\Base\Forms\Fields\PasswordField;
+use Botble\Base\Forms\Fields\PhoneNumberField;
+use Botble\Base\Forms\Fields\TextField;
+use Botble\Ecommerce\Facades\EcommerceHelper;
+use Botble\Ecommerce\Forms\Fronts\Auth\FieldOptions\EmailFieldOption;
+use Botble\Ecommerce\Forms\Fronts\Auth\FieldOptions\TextFieldOption;
+use Botble\Ecommerce\Http\Requests\RegisterRequest;
+use Botble\Ecommerce\Models\Customer;
+
+class RegisterForm extends AuthForm
+{
+    public static function formTitle(): string
+    {
+        return __('Customer register form');
+    }
+
+    public function setup(): void
+    {
+
+        parent::setup();
+
+        $this
+            ->setUrl(route('customer.register.post'))
+            ->setValidatorClass(RegisterRequest::class)
+//            ->icon('ti ti-user-plus')
+//            ->heading(__('Register an account'))
+//                ###
+            ->heading(__('ایجاد حساب کاربری'))
+//            ###
+//            ->description(__('To create a new account, please enter the following information.'))
+            ->description(__('برای ایجاد یک حساب جدید، لطفاً اطلاعات زیر را وارد کنید.'))
+            ->add(
+                'login',
+                HtmlField::class,
+                HtmlFieldOption::make()
+                    ->view('plugins/ecommerce::customers.includes.login-link')
+            )
+//            ->when(
+//                theme_option('register_background'),
+//                fn (AuthForm $form, string $background) => $form->banner($background)
+//            )
+            ->add(
+                'name',
+                TextField::class,
+                TextFieldOption::make()
+//                    ->label(__('Full name'))
+                    ->label('نام و نام خانوادگی')
+                    ->placeholder(__('Your full name'))
+                    ->icon('ti ti-user')
+            )
+//            ->add(
+//                'email',
+//                EmailField::class,
+//                EmailFieldOption::make()
+//                    ->label(__('Email'))
+//                    ->when(EcommerceHelper::isLoginUsingPhone(), function (EmailFieldOption $fieldOption): void {
+//                        $fieldOption->label(__('Email (optional)'));
+//                    })
+//                    ->placeholder(__('Your email'))
+//                    ->icon('ti ti-mail')
+//                    ->addAttribute('autocomplete', 'email')
+//            )
+            ->add(
+                'phone',
+                PhoneNumberField::class,
+                TextFieldOption::make()
+                    ->label(__('Phone (optional)'))
+                    ->when(EcommerceHelper::isLoginUsingPhone() || get_ecommerce_setting('make_customer_phone_number_required', false), function (TextFieldOption $fieldOption): void {
+                        $fieldOption
+                            ->required()
+                            ->label(__('Phone'));
+                    })
+                    ->placeholder(__('Phone number'))
+                    ->icon('ti ti-phone')
+                    ->addAttribute('autocomplete', 'tel')
+            )
+//            ->add(
+//                'password',
+//                PasswordField::class,
+//                TextFieldOption::make()
+//                    ->label(__('Password'))
+//                    ->placeholder(__('Password'))
+//                    ->icon('ti ti-lock')
+//            )
+//            ->add(
+//                'password_confirmation',
+//                PasswordField::class,
+//                TextFieldOption::make()
+//                    ->label(__('Password confirmation'))
+//                    ->placeholder(__('Password confirmation'))
+//                    ->icon('ti ti-lock')
+//            )
+            ->add(
+                'agree_terms_and_policy',
+                OnOffCheckboxField::class,
+                CheckboxFieldOption::make()
+                    ->when(
+                        $privacyPolicyUrl = theme_option('ecommerce_term_and_privacy_policy_url') ?: theme_option('term_and_privacy_policy_url'),
+                        function (CheckboxFieldOption $fieldOption, string $url): void {
+                            $fieldOption->label(__('من با شرایط و قوانین موافقم :link', ['link' => Html::link($url, __('Terms and Privacy Policy'), attributes: ['class' => 'text-decoration-underline', 'target' => '_blank'])]));
+                        }
+                    )
+                    ->when(! $privacyPolicyUrl, function (CheckboxFieldOption $fieldOption): void {
+                        $fieldOption->label(__('I agree to the Terms and Privacy Policy'));
+                    })
+            )
+            ->submitButton(__('Register'), 'ti ti-arrow-narrow-left')
+
+            ->add('filters', HtmlField::class, [
+                'html' => apply_filters(BASE_FILTER_AFTER_LOGIN_OR_REGISTER_FORM, null, Customer::class),
+            ]);
+    }
+}

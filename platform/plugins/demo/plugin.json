@@ -1,0 +1,11 @@
+{
+    "id": "botble/demo",
+    "name": "Demo",
+    "namespace": "Botble\\Demo\\",
+    "provider": "Botble\\Demo\\Providers\\DemoServiceProvider",
+    "author": "",
+    "url": "",
+    "version": "1.0.0",
+    "description": "",
+    "minimum_core_version": "7.4.5"
+}

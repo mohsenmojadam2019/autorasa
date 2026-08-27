@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /customer/*
+Disallow: /otplogin
+Disallow: /cart
+Disallow: /register
+Disallow: /*?*
+Allow: *.css*
+Allow: *.js*
+Allow: *.ttf*
+Allow: *.woff2*
+Allow: *.woff*
+
+Sitemap: https://www.autorasa.com/sitemap.xml

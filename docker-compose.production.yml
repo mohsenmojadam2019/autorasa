@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  # PHP-FPM Service
+  app:
+    image: registry.autorasa.com/main/autorasa-laravel:${TAG}
+    container_name: laravel-app
+    restart: always
+    ports: 
+      - 80:8080
+    working_dir: /var/www/html
+    env_file: ./.env
+    mem_limit: 7168m
+    # user: www-data
