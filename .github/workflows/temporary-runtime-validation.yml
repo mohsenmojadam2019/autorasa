@@ -71,17 +71,17 @@ jobs:
           $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
           $kernel->bootstrap();
           $classes = [
-              'Botble\Autoservice\Http\Controllers\AutoserviceController',
-              'Botble\Autoservice\Http\Controllers\AutoserviceHourWorkController',
-              'Botble\Ecommerce\Http\Controllers\Fronts\ServiceCenterController',
-              'Botble\Kyc\Http\Middleware\ValidateKycSubmission',
-              'Botble\Nextpay\NextpayGateway',
-              'Botble\Nextpay\Http\Controllers\NextPayController',
-              'Botble\Nextpay\Models\Transaction',
-              'FriendsOfBotble\Sms\Http\Controllers\PhoneLoginController',
-              'FriendsOfBotble\Sms\Http\Controllers\PhoneVerificationController',
-              'Botble\Behpardakht\BehpardakhtGateway',
-              'Botble\Zarinpal\ZarinpalGateway',
+              'Botble\\Autoservice\\Http\\Controllers\\AutoserviceController',
+              'Botble\\Autoservice\\Http\\Controllers\\AutoserviceHourWorkController',
+              'Botble\\Ecommerce\\Http\\Controllers\\Fronts\\ServiceCenterController',
+              'Botble\\Kyc\\Http\\Middleware\\ValidateKycSubmission',
+              'Botble\\Nextpay\\NextpayGateway',
+              'Botble\\Nextpay\\Http\\Controllers\\NextPayController',
+              'Botble\\Nextpay\\Models\\Transaction',
+              'FriendsOfBotble\\Sms\\Http\\Controllers\\PhoneLoginController',
+              'FriendsOfBotble\\Sms\\Http\\Controllers\\PhoneVerificationController',
+              'Botble\\Behpardakht\\BehpardakhtGateway',
+              'Botble\\Zarinpal\\ZarinpalGateway',
           ];
           $missing = array_values(array_filter($classes, fn ($class) => ! class_exists($class)));
           if ($missing) {
@@ -94,7 +94,30 @@ jobs:
       - name: Route registration smoke test
         shell: bash
         run: |
-          php artisan route:list > /tmp/routes.txt
-          grep -q 'public.kyc.list' /tmp/routes.txt
-          grep -q 'nextpay.payment.callback' /tmp/routes.txt
-          grep -q 'behpardakht.payment.callback' /tmp/routes.txt
+          cat > /tmp/check-routes.php <<'PHP'
+          <?php
+          require 'vendor/autoload.php';
+          $app = require 'bootstrap/app.php';
+          $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+          $kernel->bootstrap();
+          $routes = app('router')->getRoutes();
+          $expected = [
+              'public.kyc.list',
+              'nextpay.payment.callback',
+              'behpardakht.payment.callback',
+          ];
+          $missing = [];
+          foreach ($expected as $name) {
+              $route = $routes->getByName($name);
+              if (! $route) {
+                  $missing[] = $name;
+                  fwrite(STDERR, "MISSING ROUTE: {$name}\n");
+                  continue;
+              }
+              echo "ROUTE OK: {$name} => " . implode('|', $route->methods()) . ' ' . $route->uri() . "\n";
+          }
+          if ($missing) {
+              exit(1);
+          }
+          PHP
+          php /tmp/check-routes.php
