@@ -13,6 +13,13 @@ permissions:
 jobs:
   generate-lock:
     runs-on: ubuntu-latest
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: database/database.sqlite
+      CACHE_DRIVER: array
+      SESSION_DRIVER: array
+      QUEUE_CONNECTION: sync
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,10 +27,14 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
-          extensions: curl, gd, json, pdo_mysql, zip, soap
+          extensions: curl, gd, json, pdo_sqlite, zip, soap
           coverage: none
-      - name: Use main identity for local path packages
-        run: git branch -m main
+      - name: Use main identity and prepare application
+        run: |
+          git branch -m main
+          mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache database
+          touch database/database.sqlite
+          cp .env.example .env
       - name: Save original lock
         run: cp composer.lock /tmp/composer.lock.before
       - name: Apply merge-plugin lock resolution
