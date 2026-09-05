@@ -1,0 +1,43 @@
+name: Khesaratino Branch Cleanup Once
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/khesaratino-branch-cleanup-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete Khesaratino branches if same-owner token permits
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          repo='mohsenmojadam2019/khesaratino'
+          targets=(
+            'codex/semantic-3d-platform-v2'
+            'feat/free-public-pricing'
+            'fix/cd-sync-deploy-contract'
+            'fix/deploy-degraded-without-models'
+            'fix/deploy-registry-retries'
+            'fix/release-remove-classifier'
+            'ops/belitino-style-production-deploy'
+            'redesign/luxury-home'
+            'redesign/white-enterprise-site'
+          )
+          if ! gh api "repos/$repo" >/dev/null 2>&1; then
+            echo 'CROSS_REPO_TOKEN_ACCESS=false'
+            exit 4
+          fi
+          echo 'CROSS_REPO_TOKEN_ACCESS=true'
+          for branch in "${targets[@]}"; do
+            gh api -X DELETE "repos/$repo/git/refs/heads/$branch" >/dev/null
+            echo "DELETED=$branch"
+          done
